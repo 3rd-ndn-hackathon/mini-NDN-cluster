@@ -65,10 +65,13 @@ from mininet.cli import CLI
 from mininet.link import TCLink
 from mininet.util import ipStr, ipParse
 
+from mininet.examples.cluster import ( MininetCluster, RoundRobinPlacer, ClusterCleanup )
+from mininet.examples.clustercli import ClusterCLI
 
 from ndn import ExperimentManager
-from ndn.ndn_host import NdnHost, CpuLimitedNdnHost
+from ndn.ndn_host import NdnHost, CpuLimitedNdnHost, RemoteNdnHost
 from ndn.conf_parser import parse_hosts, parse_switches, parse_links
+from ndn.remote_ndn_link import RemoteNdnLink
 
 import os.path, time
 import optparse
@@ -78,6 +81,8 @@ import sys
 
 from ndn.nlsr import Nlsr, NlsrConfigGenerator
 from ndn.nfd import Nfd
+
+from functools import partial
 
 VERSION_NUMBER = "0.1.1"
 
@@ -107,6 +112,8 @@ class ProgramOptions:
         self.workDir = "/tmp"
         self.resultDir = None
         self.pctTraffic = 1.0
+        self.cluster = None
+        self.servers = None
 
 def createResultsDir(resultDir, faces, hr):
     if faces == 0:
@@ -171,6 +178,9 @@ def parse_args():
     parser.add_option("--pct-traffic", action="store", dest="pctTraffic", type="float", default=1.0,
     help="Specify the percentage of nodes each node should ping")
 
+    parser.add_option("--cluster", type='string', default=None, metavar='server1,server2...',
+    help="Run cluster edition")
+
     parser.add_option('--version', '-V', action='callback', callback=printVersion,
     help='Displays version information')
 
@@ -187,6 +197,7 @@ def parse_args():
     options.workDir = args.workDir
     options.resultDir = args.resultDir
     options.pctTraffic = args.pctTraffic
+    options.cluster = args.cluster
 
     if options.experimentName is not None and options.experimentName not in ExperimentManager.getExperimentNames():
         print("No experiment named %s" % options.experimentName)
@@ -199,6 +210,13 @@ def parse_args():
         options.templateFile = ''
     else:
         options.templateFile = arg[0]
+
+    if options.cluster is not None:
+        servers = options.cluster.split(',')
+        for server in servers:
+            ClusterCleanup.add( server )
+
+    options.servers = servers
 
     return options
 
@@ -263,7 +281,12 @@ def execute(options):
     if topo.isTCLink == True and topo.isLimited == True:
         net = Mininet(topo,host=CpuLimitedNdnHost,link=TCLink)
     elif topo.isTCLink == True and topo.isLimited == False:
-        net = Mininet(topo,host=NdnHost,link=TCLink)
+        if options.cluster is not None:
+            #servers = [ 'localhost', '10.10.10.2' ]
+            mn = partial( MininetCluster, servers=options.servers, placement=RoundRobinPlacer )
+            net = mn( topo=topo, host=RemoteNdnHost, link=RemoteNdnLink )
+        else:
+            net = Mininet(topo,host=NdnHost,link=TCLink)
     elif topo.isTCLink == False and topo.isLimited == True:
         net = Mininet(topo,host=CpuLimitedNdnHost)
     else:

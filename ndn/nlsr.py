@@ -22,6 +22,8 @@
 # If not, see <http://www.gnu.org/licenses/>.
 
 from ndn.ndn_application import NdnApplication
+import shutil
+import os
 
 class Nlsr(NdnApplication):
     def __init__(self, node):
@@ -57,25 +59,44 @@ class NlsrConfigGenerator:
         self.hyperbolicState = parameters.get("hyperbolic-state", "off")
         self.hyperRadius = parameters.get("radius", 0.0)
         self.hyperAngle = parameters.get("angle", 0.0)
-        self.logLevel = parameters.get("nlsr-log-level", "DEBUG")
+        self.logLevel = parameters.get("nlsr-log-level", "NONE")
 
     def createConfigFile(self):
 
-        filePath = "%s/nlsr.conf" % self.node.homeFolder
+        #filePath = "%s/nlsr.conf" % self.node.homeFolder
+        #filePath = "/home/ashu/Desktop/ndn-src/mini-ndn/ndn_utils/nlsr.conf"
 
-        configFile = open(filePath, 'r')
-        oldContent = configFile.read()
-        configFile.close()
+        #configFile = open(filePath, 'r')
+        #oldContent = configFile.read()
+        #configFile.close()
 
-        newContent = oldContent.replace("$GENERAL_SECTION", self.__getGeneralSection())
-        newContent = newContent.replace("$NEIGHBORS_SECTION", self.__getNeighborsSection())
-        newContent = newContent.replace("$HYPERBOLIC_SECTION", self.__getHyperbolicSection())
-        newContent = newContent.replace("$FIB_SECTION", self.__getFibSection())
-        newContent = newContent.replace("$ADVERTISING_SECTION", self.__getAdvertisingSection())
+        #newContent = oldContent.replace("$GENERAL_SECTION", self.__getGeneralSection())
+        #newContent = newContent.replace("$NEIGHBORS_SECTION", self.__getNeighborsSection())
+        #newContent = newContent.replace("$HYPERBOLIC_SECTION", self.__getHyperbolicSection())
+        #newContent = newContent.replace("$FIB_SECTION", self.__getFibSection())
+        #newContent = newContent.replace("$ADVERTISING_SECTION", self.__getAdvertisingSection())
 
-        configFile = open(filePath, 'w')
-        configFile.write(newContent)
-        configFile.close()
+        newContent = self.__getGeneralSection() + "\n" + self.__getNeighborsSection() + "\n" + \
+                     self.__getHyperbolicSection() + "\n" + self.__getFibSection() + "\n" + \
+                     self.__getAdvertisingSection() + "\n" + self.__getSecuritySection()
+
+        self.node.cmd("echo \"{}\" > nlsr.conf".format(newContent))
+
+        #shutil.copy2("/home/ashu/Desktop/ndn-src/mini-ndn/ndn_utils/nlsr.conf", "/home/ashu/Desktop/ndn-src/mini-ndn/ndn_utils/nlsr2.conf")
+
+        #filePath2 = "/home/ashu/Desktop/ndn-src/mini-ndn/ndn_utils/nlsr2.conf"
+        #configFile = open(filePath2, 'w')
+        #configFile.write(newContent)
+        #configFile.close()
+
+        #mystr=self.node.cmd("ls /home/ashu/Desktop | grep No")
+        #print(self.node)
+        #print(mystr)
+        #if( "No" in mystr ):
+        #    os.system("scp /home/ashu/Desktop/ndn-src/mini-ndn/ndn_utils/nlsr2.conf mininet@10.10.10.2:")
+        #    self.node.cmd("sudo cp /home/mininet/nlsr2.conf nlsr.conf")
+        #else:
+        #    self.node.cmd("sudo cp /home/ashu/Desktop/ndn-src/mini-ndn/ndn_utils/nlsr2.conf nlsr.conf")
 
     def __getConfig(self):
 
