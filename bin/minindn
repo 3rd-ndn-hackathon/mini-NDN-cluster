@@ -72,7 +72,7 @@ from ndn import ExperimentManager
 from ndn.ndn_host import NdnHost, CpuLimitedNdnHost, RemoteNdnHost
 from ndn.conf_parser import parse_hosts, parse_switches, parse_links
 from ndn.remote_ndn_link import RemoteNdnLink, RemoteGRENdnLink
-from ndn.placer import GuidedPlacer
+from ndn.placer import GuidedPlacer, PopulatePlacement
 
 import os.path, time
 import shutil
@@ -195,6 +195,9 @@ def parse_args():
     parser.add_option("--placement", type='string', dest="placement", default='guided',
     help="Placement algorithms: roundRobin, guided")
 
+    parser.add_option("--place-list", action="store", dest="placeList", default=None,
+    help="Provide corresponding number of nodes (comma separated) to put on each node respectively of --cluster")
+
     parser.add_option("--tunnel-type", action="store", type='string', dest="tunnelType", default='ssh',
     help="Tunnel types: ssh, gre")
 
@@ -219,6 +222,7 @@ def parse_args():
     options.cluster = args.cluster
     options.placement = args.placement
     options.tunnelType = args.tunnelType
+    options.placeList = args.placeList
 
     if options.experimentName is not None and options.experimentName not in ExperimentManager.getExperimentNames():
         print("No experiment named %s" % options.experimentName)
@@ -241,7 +245,13 @@ def parse_args():
         if options.placement == "roundRobin":
             options.placement = RoundRobinPlacer
         elif options.placement == "guided":
-            options.placement = GuidedPlacer
+            if options.placeList is None:
+                print("Please specify how many nodes you want to place on each node!")
+                sys.exit()
+            else:
+                placeList = map(int, options.placeList.split(","))
+                PopulatePlacement(placeList)
+                options.placement = GuidedPlacer
 
         if options.tunnelType == "ssh":
             options.tunnelType = RemoteNdnLink
