@@ -216,7 +216,7 @@ def parse_args():
     options.resultDir = args.resultDir
     options.pctTraffic = args.pctTraffic
     options.cluster = args.cluster
-    options.placer = args.placer
+    options.placement = args.placement
     options.tunnelType = args.tunnelType
 
     if options.experimentName is not None and options.experimentName not in ExperimentManager.getExperimentNames():
@@ -237,10 +237,10 @@ def parse_args():
             ClusterCleanup.add( server )
         options.servers = servers
 
-        if options.placer == "roundRobin":
-            options.placer = RoundRobinPlacer
-        elif options.placer == "guided":
-            options.placer = GuidedPlacer
+        if options.placement == "roundRobin":
+            options.placement = RoundRobinPlacer
+        elif options.placement == "guided":
+            options.placement = GuidedPlacer
 
         if options.tunnelType == "ssh":
             options.tunnelType = RemoteNdnLink
@@ -318,7 +318,7 @@ def execute(options):
         net = Mininet(topo,host=CpuLimitedNdnHost,link=TCLink)
     elif topo.isTCLink == True and topo.isLimited == False:
         if options.cluster is not None:
-            mn = partial( MininetCluster, servers=options.servers, placement=options.placer )
+            mn = partial( MininetCluster, servers=options.servers, placement=options.placement )
             net = mn( topo=topo, host=RemoteNdnHost, link=options.tunnelType )
         else:
             net = Mininet(topo,host=NdnHost,link=TCLink)
