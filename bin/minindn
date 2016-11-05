@@ -191,7 +191,7 @@ def parse_args():
     parser.add_option("--cluster", type='string', default=None, metavar='server1,server2...',
     help="Run cluster edition")
 
-    parser.add_option("--placer", type='string', dest="placer", default='guided',
+    parser.add_option("--placement", type='string', dest="placement", default='guided',
     help="Placement algorithms: roundRobin, guided")
 
     parser.add_option("--tunnel-type", action="store", type='string', dest="tunnelType", default='ssh',
