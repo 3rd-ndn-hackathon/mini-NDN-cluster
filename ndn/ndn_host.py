@@ -59,6 +59,8 @@
 #   without specific, written prior permission.
 
 from mininet.node import CPULimitedHost, Host, Node
+from mininet.examples.cluster import RemoteMixin
+
 from ndn.nfd import Nfd
 
 class NdnHostCommon():
@@ -150,3 +152,7 @@ class CpuLimitedNdnHost(CPULimitedHost, NdnHostCommon):
         "Stop node."
         self.nfd.stop()
         Host.terminate(self)
+
+class RemoteNdnHost( RemoteMixin, NdnHost ):
+    "A node on a remote server"
+    pass

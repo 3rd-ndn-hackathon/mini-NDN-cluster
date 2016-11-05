@@ -24,6 +24,8 @@
 from mininet.clean import sh
 
 from ndn.ndn_application import NdnApplication
+import shutil
+import os
 
 import os
 import shutil
@@ -120,26 +122,15 @@ class NlsrConfigGenerator:
         self.hyperbolicState = parameters.get("hyperbolic-state", "off")
         self.hyperRadius = parameters.get("radius", 0.0)
         self.hyperAngle = parameters.get("angle", 0.0)
-        self.logLevel = parameters.get("nlsr-log-level", "DEBUG")
+        self.logLevel = parameters.get("nlsr-log-level", "NONE")
 
     def createConfigFile(self):
 
-        filePath = "%s/nlsr.conf" % self.node.homeFolder
+        newContent = self.__getGeneralSection() + "\n" + self.__getNeighborsSection() + "\n" + \
+                     self.__getHyperbolicSection() + "\n" + self.__getFibSection() + "\n" + \
+                     self.__getAdvertisingSection() + "\n" + self.__getSecuritySection()
 
-        configFile = open(filePath, 'r')
-        oldContent = configFile.read()
-        configFile.close()
-
-        newContent = oldContent.replace("$GENERAL_SECTION", self.__getGeneralSection())
-        newContent = newContent.replace("$NEIGHBORS_SECTION", self.__getNeighborsSection())
-        newContent = newContent.replace("$HYPERBOLIC_SECTION", self.__getHyperbolicSection())
-        newContent = newContent.replace("$FIB_SECTION", self.__getFibSection())
-        newContent = newContent.replace("$ADVERTISING_SECTION", self.__getAdvertisingSection())
-        newContent = newContent.replace("$SECURITY_SECTION", self.__getSecuritySection())
-
-        configFile = open(filePath, 'w')
-        configFile.write(newContent)
-        configFile.close()
+        self.node.cmd("echo \"{}\" > nlsr.conf".format(newContent))
 
     def __getConfig(self):
 
