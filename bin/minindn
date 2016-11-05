@@ -72,6 +72,7 @@ from ndn import ExperimentManager
 from ndn.ndn_host import NdnHost, CpuLimitedNdnHost, RemoteNdnHost
 from ndn.conf_parser import parse_hosts, parse_switches, parse_links
 from ndn.remote_ndn_link import RemoteNdnLink, RemoteGRENdnLink
+from ndn.placer import GuidedPlacer
 
 import os.path, time
 import shutil
