@@ -71,7 +71,7 @@ from mininet.examples.clustercli import ClusterCLI
 from ndn import ExperimentManager
 from ndn.ndn_host import NdnHost, CpuLimitedNdnHost, RemoteNdnHost
 from ndn.conf_parser import parse_hosts, parse_switches, parse_links
-from ndn.remote_ndn_link import RemoteNdnLink
+from ndn.remote_ndn_link import RemoteNdnLink, RemoteGRENdnLink
 
 import os.path, time
 import shutil
@@ -118,6 +118,9 @@ class ProgramOptions:
         self.pctTraffic = 1.0
         self.cluster = None
         self.servers = None
+        self.guided = None
+        self.placer = None
+        self.tunnelType = None
 
 def createResultsDir(resultDir, faces, hr):
     if faces == 0:
@@ -188,6 +191,12 @@ def parse_args():
     parser.add_option("--cluster", type='string', default=None, metavar='server1,server2...',
     help="Run cluster edition")
 
+    parser.add_option("--placer", type='string', dest="placer", default='guided',
+    help="Placement algorithms: roundRobin, guided")
+
+    parser.add_option("--tunnel-type", action="store", type='string', dest="tunnelType", default='ssh',
+    help="Tunnel types: ssh, gre")
+
     parser.add_option('--version', '-V', action='callback', callback=printVersion,
     help='Displays version information')
 
@@ -207,6 +216,8 @@ def parse_args():
     options.resultDir = args.resultDir
     options.pctTraffic = args.pctTraffic
     options.cluster = args.cluster
+    options.placer = args.placer
+    options.tunnelType = args.tunnelType
 
     if options.experimentName is not None and options.experimentName not in ExperimentManager.getExperimentNames():
         print("No experiment named %s" % options.experimentName)
@@ -224,8 +235,17 @@ def parse_args():
         servers = options.cluster.split(',')
         for server in servers:
             ClusterCleanup.add( server )
+        options.servers = servers
 
-    options.servers = servers
+        if options.placer == "roundRobin":
+            options.placer = RoundRobinPlacer
+        elif options.placer == "guided":
+            options.placer = GuidedPlacer
+
+        if options.tunnelType == "ssh":
+            options.tunnelType = RemoteNdnLink
+        else:
+            options.tunnelType = RemoteGRENdnLink
 
     return options
 
@@ -298,9 +318,8 @@ def execute(options):
         net = Mininet(topo,host=CpuLimitedNdnHost,link=TCLink)
     elif topo.isTCLink == True and topo.isLimited == False:
         if options.cluster is not None:
-            #servers = [ 'localhost', '10.10.10.2' ]
-            mn = partial( MininetCluster, servers=options.servers, placement=RoundRobinPlacer )
-            net = mn( topo=topo, host=RemoteNdnHost, link=RemoteNdnLink )
+            mn = partial( MininetCluster, servers=options.servers, placement=options.placer )
+            net = mn( topo=topo, host=RemoteNdnHost, link=options.tunnelType )
         else:
             net = Mininet(topo,host=NdnHost,link=TCLink)
     elif topo.isTCLink == False and topo.isLimited == True:
@@ -402,7 +421,17 @@ def execute(options):
 
     if options.resultDir is not None:
         print("Moving results to %s" % options.resultDir)
-        os.system("sudo mv /%s/* %s" % (options.workDir, options.resultDir))
+        for file in glob.glob('%s/*' % options.workDir):
+            shutil.move(file, options.resultDir)
+        if options.cluster is not None:
+            devnull = open('/dev/null', 'w')
+            for server in options.servers:
+                if server != "localhost":
+                    login = "mininet@%s" % server
+                    src = "%s:%s/*" % login/options.workDir
+                    dst = options.resultDir
+                    call(["sudo", "scp", "-i/home/mininet/.ssh/id_rsa", "-r", src, dst], stdout=devnull, stderr=devnull)
+                    call(["sudo", "ssh", "-t", "-i/home/mininet/.ssh/id_rsa", login, "sudo rm -rf %s/*" % options.workDir], stdout=devnull)
 
 def signal_handler(signal, frame):
     print('Cleaning up...')
