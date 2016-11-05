@@ -82,6 +82,7 @@ from os.path import expanduser
 import sys
 import signal
 from subprocess import call
+import glob
 
 from ndn.nlsr import Nlsr, NlsrConfigGenerator
 from ndn.nfd import Nfd
@@ -439,7 +440,7 @@ def execute(options):
             for server in options.servers:
                 if server != "localhost":
                     login = "mininet@%s" % server
-                    src = "%s:%s/*" % login/options.workDir
+                    src = "%s:%s/*" % (login, options.workDir)
                     dst = options.resultDir
                     call(["sudo", "scp", "-i/home/mininet/.ssh/id_rsa", "-r", src, dst], stdout=devnull, stderr=devnull)
                     call(["sudo", "ssh", "-t", "-i/home/mininet/.ssh/id_rsa", login, "sudo rm -rf %s/*" % options.workDir], stdout=devnull)

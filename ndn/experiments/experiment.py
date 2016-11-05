@@ -49,9 +49,11 @@ class Experiment:
         for host in self.net.hosts:
             # Set strategy
             host.nfd.setStrategy("/ndn/edu", self.strategy)
+            time.sleep(2)  # ndnpingserver was not starting in cluster edition without th
 
             # Start ping server
-            host.cmd("ndnpingserver /ndn/edu/" + str(host) + " > ping-server &")
+            #host.cmd("ndnpingserver /ndn/edu/" + str(host) + " > ping-server &")
+            host.cmd("ndnpingserver /ndn/edu/" + str(host) + " > /dev/null &")
 
             # Create folder to store ping data
             host.cmd("mkdir ping-data")
